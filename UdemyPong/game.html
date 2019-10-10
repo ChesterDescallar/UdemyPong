@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+
+<canvas id="gameCanvas" width ="800" height="600"> </canvas>
+
+
+<script>
+var canvas;
+var canvasContext;
+var ballX = 10;
+var ballSpeedX = 5;
+var ballY = 290;
+var ballSpeedY = ballSpeedX/2;
+
+
+var paddle1Y = 210;
+var paddle2Y = 210;
+
+var p1Score = 0;
+var p2Score = 0;
+
+var showWinScreen = false;
+
+const PADDLE_HEIGHT = 75;
+const PADDLE_WIDTH = 8;
+const WINNING_SCORE = 3;
+
+
+function calculateMousePos(evt) 
+{
+	var rect = canvas.getBoundingClientRect(); // area that is the black rectangle
+	var root = document.documentElement;
+	var mouseX = evt.clientX - rect.left - root.scrollLeft; //accounting the page
+	var mouseY = evt.clientY - rect.top - root.scrollTop; //
+	return  {
+		x:mouseX,
+		y:mouseY
+	};
+	//one return value object literal
+}
+
+function handleMouseClick(evt)
+{
+	if(showWinScreen)
+	{
+		p1Score = 0;
+		p2Score = 0;
+		showWinScreen = false;
+	}
+}
+
+window.onload = function()
+{
+	
+	canvas = document.getElementById("gameCanvas");
+	canvasContext = canvas.getContext("2d");
+	
+	var framesperSecond = 60;
+	//setInterval(callBoth(), 1000/framesperSecond);
+	
+	setInterval(function()
+	{
+	moveEverything();
+	drawEverything();
+	}
+	, 1000/framesperSecond);
+	
+	canvas.addEventListener('mousemove', 
+	function(evt)
+	{
+		var mousePos = calculateMousePos(evt);
+		paddle1Y = mousePos.y - (PADDLE_HEIGHT/2);
+		
+	}
+	);
+	
+	canvas.addEventListener('mousedown', handleMouseClick);
+			
+}
+
+//function callBoth()
+//{
+//	moveEverything();
+//	drawEverything();
+//}
+
+function aiMovement()
+{
+	var pad2Center = paddle2Y + (PADDLE_HEIGHT/2);
+	if (pad2Center < ballY-30)
+	{
+		paddle2Y += 5;
+	}
+	else if (pad2Center > ballY+30)
+	{
+		paddle2Y -= 5;
+	}
+}
+
+function moveEverything()
+{
+	if (showWinScreen)
+	{
+
+		return;
+	}
+	aiMovement();
+
+	ballX = ballX + ballSpeedX;
+	ballY = ballY + ballSpeedY
+	
+	
+	
+	if(ballX <= 0)
+	{
+	
+		if(ballY > paddle1Y &&
+		   ballY < paddle1Y+PADDLE_HEIGHT)
+		   {
+				ballSpeedX = -ballSpeedX //changes this to negative to a 
+					// positive (moves the ball forwards again as it was negative)
+					
+					var deltaY = ballY - (paddle1Y+(PADDLE_HEIGHT/2));
+					ballSpeedY = deltaY * 0.35;
+					
+		   }
+		else
+			{
+				p2Score++;
+				ballReset();
+			}
+		
+	}
+	
+	
+	if(ballX >= (canvas.width))
+	{
+		
+		if(ballY > paddle2Y &&
+		   ballY < paddle2Y+PADDLE_HEIGHT)
+		   {
+				ballSpeedX = -ballSpeedX //changes this to negative to a 
+				// positive (moves the ball forwards again as it was negative)
+				var deltaY = ballY - (paddle2Y+(PADDLE_HEIGHT/2));
+					ballSpeedY = deltaY * 0.35;
+		   }
+		else
+			{
+				
+				p1Score ++;
+				ballReset();
+			} //changes this to negative (moves the ball backwards)
+	}
+	
+	
+	
+	
+	if(ballY >= (canvas.height))
+	{
+		ballSpeedY = -ballSpeedY; //changes this to negative (moves the ball backwards)
+	}
+	
+	if(ballY <= 0)
+	{
+		ballSpeedY = -ballSpeedY; //changes this to negative to a 
+								// positive (moves the ball forwards again as it was negative)
+	}
+	
+	
+	
+
+	
+}
+
+function drawEverything()
+{
+
+	//console.log(ballX);
+	//creates the board that the player will play on
+	colorRect(0,0,canvas.width,canvas.height,"black");
+	
+	if (showWinScreen)
+	{
+		canvasContext.fillStyle = "white";
+		if (p1Score >= WINNING_SCORE)
+		{
+			canvasContext.fillText("Left player won.", 400, 150 )
+		}
+		else if (p2Score >= WINNING_SCORE)
+		{
+			canvasContext.fillText("Right player won.", 400, 150 )
+		}
+	
+		
+		canvasContext.fillText("Click to continue", 400, 300 )
+		return;
+	}
+
+	drawNet();
+	
+	//Creates a square ball
+	//colorRect(ballX,ballY,10,10,"red");
+	colorCircle(ballX, ballY, 5, "red")
+	
+	//creates the paddle1 (left paddle)
+	
+	colorRect((canvas.width - 799),paddle1Y,PADDLE_WIDTH,PADDLE_HEIGHT, "white");
+	//creates the paddle2 (right paddle)
+	
+	colorRect(((canvas.width - 1) - PADDLE_WIDTH),paddle2Y,PADDLE_WIDTH,PADDLE_HEIGHT, "white");
+	
+	//creates the ball	
+	
+	canvasContext.fillText(p1Score, 100, 100)
+	canvasContext.fillText(p2Score, canvas.width-100, 100)
+	
+}
+
+function drawNet()
+{
+	for (var i=0; i<canvas.height; i+= 40)
+	{
+		colorRect(canvas.width/2-1,i,2,20,'white');
+	}
+}
+
+//creates the board
+function colorRect(leftX, topY, width, height, drawColor)
+{
+	canvasContext.fillStyle = drawColor;
+	canvasContext.fillRect(leftX, topY, width, height,);
+}
+
+function colorCircle(centerX, centerY, radius, drawColor)
+{
+	canvasContext.fillStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.arc(centerX, centerY, radius, 0, Math.PI*2, true);
+	canvasContext.fill();
+}
+
+
+function ballReset()
+{
+	
+	if (p1Score >= WINNING_SCORE || p2Score >= WINNING_SCORE)
+	{
+		showWinScreen = true;
+		
+	}
+	
+	ballSpeedX = -ballSpeedX
+	ballX = canvas.width/2;
+	ballY = canvas.height/2;
+}
+
+
+	
+</script>
+
+</html>
